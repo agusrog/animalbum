@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract AnimAlbum is ERC1155, Ownable {
 
-    uint8 constant DECIMAL = 3;
     uint8 constant TOKEN_TYPES = 10;
-    
+
     uint8 constant YAGUARETE = 1;
     uint8 constant PINGUINO = 2;
     uint8 constant PUMA = 3;
@@ -20,47 +19,45 @@ contract AnimAlbum is ERC1155, Ownable {
     uint8 constant CARPINCHO = 8;
     uint8 constant TUCAN = 9;
     uint8 constant LOBO_MARINO = 10;
-
+    uint8 constant CONDOR_BONUS = 11;
     mapping(address => uint256) lastUpdated;
 
-
-    constructor() ERC1155("") {
-        _mint(owner(), YAGUARETE, 10**DECIMAL, "");
-        _mint(owner(), PINGUINO, 10**DECIMAL, "");
-        _mint(owner(), PUMA, 10**DECIMAL, "");
-        _mint(owner(), GUANACO, 10**DECIMAL, "");
-        _mint(owner(), HORNERO, 10**DECIMAL, "");
-        _mint(owner(), TAPIR, 10**DECIMAL, "");
-        _mint(owner(), FLAMENCTO, 10**DECIMAL, "");
-        _mint(owner(), CARPINCHO, 10**DECIMAL, "");
-        _mint(owner(), TUCAN, 10**DECIMAL, "");
-        _mint(owner(), LOBO_MARINO, 10**DECIMAL, "");
-    }
+    constructor() ERC1155("") { }
 
     function uri(uint256 _tokenid) override public pure returns (string memory) {
         return string(abi.encodePacked("https://azure-renewed-dog-869.mypinata.cloud/ipfs/QmQiEHcaTWaek5We6rwDyJtR2NMRfB8UUqjLCefbjz12Jp/", Strings.toString(_tokenid),".json"));
     }
 
-    function claim() external {
-        require(msg.sender != owner(), "You are the owner");
-        if (lastUpdated[msg.sender] != 0) {
+    modifier OnlyOnePerDay () {
+        if (lastUpdated[msg.sender] != 0 && msg.sender != owner()) {
             require(lastUpdated[msg.sender] < block.timestamp - 1 days, "Only one claim per day");
-        }
-        lastUpdated[msg.sender] = block.timestamp;
-        _safeTransferFrom(owner(), msg.sender, getRandomNum(), 1, "");
-     }
-
-     function getRandomNum() private view returns (uint8) {
-        uint8[] memory positions = new uint8[](TOKEN_TYPES);
-        uint8 counter = 0;
-        for (uint8 i = 1; i <= TOKEN_TYPES; i++) {
-            if (this.balanceOf(owner(), i) > 0) {
-                positions[counter] = i;
-                counter++;
-            }
-        }        
-        require(counter > 0, "There are not more tokens");        
-        uint256 randomIndex = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % counter;        
-        return positions[randomIndex];
+        }_;
     }
+
+    function claim() external OnlyOnePerDay {
+        lastUpdated[msg.sender] = block.timestamp;
+        _mint(msg.sender, randomNum(), 1, "");
+    }
+
+    function randomNum() private view returns (uint256)  {
+        return uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % TOKEN_TYPES + 1;
+    }
+
+    function claimBonusToken() external {
+        require(albumCompleted() == true, "The album is not completed");
+        require(this.balanceOf(msg.sender, CONDOR_BONUS) == 0, "You already have this token");
+        _mint(msg.sender, CONDOR_BONUS, 1, "");
+     }
+     
+     function albumCompleted() public view returns (bool) {
+        bool _albumCompleted = true;
+        for (uint i = 1; i <= TOKEN_TYPES; i++) 
+        {
+            if (this.balanceOf(msg.sender, i) == 0) {
+            _albumCompleted = false;
+            break;
+            }
+        }
+        return _albumCompleted;
+     }
 }
