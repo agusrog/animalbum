@@ -25,7 +25,7 @@ contract AnimAlbum is ERC1155, Ownable {
     constructor() ERC1155("") { }
 
     function uri(uint256 _tokenid) override public pure returns (string memory) {
-        return string(abi.encodePacked("https://azure-renewed-dog-869.mypinata.cloud/ipfs/QmQiEHcaTWaek5We6rwDyJtR2NMRfB8UUqjLCefbjz12Jp/", Strings.toString(_tokenid),".json"));
+        return string(abi.encodePacked("https://azure-renewed-dog-869.mypinata.cloud/ipfs/QmdspjUHX5pDQnUdqqtq7sxmtbsCbz6ZdJdUQdDGuzPMQo/", Strings.toString(_tokenid),".json"));
     }
 
     modifier OnlyOnePerDay () {
